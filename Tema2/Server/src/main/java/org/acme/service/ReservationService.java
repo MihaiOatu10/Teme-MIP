@@ -3,6 +3,8 @@ package org.acme.service;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import org.acme.entity.Reservation;
+import org.hibernate.LockMode;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -11,6 +13,10 @@ public class ReservationService {
     private static final List<String> ALL_SLOTS = List.of(
             "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"
     );
+
+    private Reservation findBySlot(String slot) {
+        return Reservation.find("timeSlot", slot, LockMode.PESSIMISTIC_WRITE).firstResult();
+    }
 
     @Transactional
     public String getAvailableSlots() {
@@ -28,12 +34,12 @@ public class ReservationService {
     }
 
     @Transactional
-    public synchronized String makeReservation(String clientName, String slot) {
+    public String makeReservation(String clientName, String slot) {
         if (!ALL_SLOTS.contains(slot)) {
             return "Eroare: Slot invalid. Alege o ora fixa (ex: 10:00).";
         }
 
-        if (Reservation.findBySlot(slot) != null) {
+        if (findBySlot(slot) != null) {
             return "Eroare: Slotul " + slot + " este deja rezervat!";
         }
 
@@ -54,7 +60,7 @@ public class ReservationService {
 
     @Transactional
     public String cancelReservation(String clientName, String slot) {
-        Reservation res = Reservation.findBySlot(slot);
+        Reservation res = findBySlot(slot);
         if (res != null && res.clientName.equals(clientName)) {
             res.delete();
             return "Succes: Rezervarea de la " + slot + " a fost anulata.";

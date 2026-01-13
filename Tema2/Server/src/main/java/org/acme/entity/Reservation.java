@@ -15,8 +15,4 @@ public class Reservation extends PanacheEntity {
         this.clientName = clientName;
         this.timeSlot = timeSlot;
     }
-
-    public static Reservation findBySlot(String slot) {
-        return find("timeSlot", slot).firstResult();
-    }
 }
